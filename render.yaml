@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: skychaos-bot
+    env: python
+    region: frankfurt
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
+    runtime: python
+    runtimeVersion: "3.11.8"
