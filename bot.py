@@ -2,43 +2,54 @@ import os
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-# TOKEN береться з Railway / Render
-TOKEN = os.environ.get("TOKEN")
+# TOKEN з Railway / Render (захист від \n і пробілів)
+TOKEN = os.getenv("TOKEN", "").strip()
 
+# твій Telegram ID
 OWNER_ID = 5904220441
 
-# зберігаємо апеляції
+# просте збереження апеляцій
 appeals = {}
 
-# /start
+# --------------------
+# START
+# --------------------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "Привіт! Напиши апеляцію:\n\n"
+        "Привіт! 👋\n\n"
+        "Надішли апеляцію у форматі:\n\n"
         "Нік:\nПричина бану:\nЧому вважаєш бан помилкою:"
     )
 
-# отримання апеляції
+# --------------------
+# ОТРИМАННЯ АПЕЛЯЦІЇ
+# --------------------
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+
     user_id = update.effective_chat.id
     text = update.message.text
 
+    # зберігаємо
     appeals[user_id] = text
 
+    # відправляємо адміну
     await context.bot.send_message(
         chat_id=OWNER_ID,
-        text=f"""📩 НОВА АПЕЛЯЦІЯ
-
-ID: {user_id}
-
-{text}
-
-💬 Відповідь:
-`/reply {user_id} твій текст`"""
+        text=(
+            "📩 НОВА АПЕЛЯЦІЯ\n\n"
+            f"ID: {user_id}\n\n"
+            f"{text}\n\n"
+            f"💬 Відповідь:\n/reply {user_id} <текст>"
+        )
     )
 
-    await update.message.reply_text("Апеляцію отримано, очікуйте відповідь.")
+    await update.message.reply_text("✅ Апеляцію отримано, очікуйте відповідь.")
 
-# відповідь гравцю
+# --------------------
+# ВІДПОВІДЬ АДМІНА
+# --------------------
 async def reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.id != OWNER_ID:
         return
@@ -57,7 +68,12 @@ async def reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text("✅ Відправлено!")
 
-# запуск
+# --------------------
+# СТАРТ БОТА
+# --------------------
+if not TOKEN:
+    raise ValueError("TOKEN не знайдено! Додай його в Environment Variables")
+
 app = Application.builder().token(TOKEN).build()
 
 app.add_handler(CommandHandler("start", start))
